@@ -12,7 +12,7 @@ router.get('/test', function(req, res) {
   var ref = db.ref(req.query.mac);
   ref.once('value', function(snapshot){
     var result = snapshot.val();
-    res.status(400).json({
+    res.status(200).json({
       status: true,
       message: "success",
       data: result
@@ -26,7 +26,7 @@ router.post('/test', function(req, res) {
   ref.once('value', function(snapshot){
     var ref2 = db.ref("/");
     ref2.set(Object.assign({}, snapshot.val(), req.body)).then(() => {
-      res.status(400).json({
+      res.status(200).json({
         status: true,
         message: "updated"
       })
