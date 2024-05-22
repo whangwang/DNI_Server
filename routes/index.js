@@ -3,6 +3,7 @@ var router = express.Router();
 var firebase = require("firebase-admin");
 var nodeHtmlToImage = require('node-html-to-image'); 
 var ejs = require("ejs");
+var Jimp = require('jimp');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -46,20 +47,35 @@ router.get('/genImg', async function(req, res) {
   const GSR_MAX = 800
   const BO_MAX = 100
 
-  const image = await nodeHtmlToImage({
-    html: await ejs.renderFile('views/index.ejs', {
-      HR: num2Color(req.query.HR, HR_MAX, HR_MIN),
-      TMP: num2Color(req.query.TMP, TMP_MAX, TMP_MIN),
-      GSR: num2Color(req.query.GSR, GSR_MAX, GSR_MIN),
-      BO: num2Color(req.query.BO, BO_MAX, BO_MIN),
-      HR_LOC : randomLocation(),
-      TMP_LOC : randomLocation(),
-      GSR_LOC : randomLocation(),
-      BO_LOC : randomLocation(),
-    })
-  });
-  res.writeHead(200, { 'Content-Type': 'image/png' });
-  res.end(image, 'binary');
+  try {
+    // Generate the PNG image
+    const image = await nodeHtmlToImage({
+      html: await ejs.renderFile('views/index.ejs', {
+        HR: num2Color(req.query.HR, HR_MAX, HR_MIN),
+        TMP: num2Color(req.query.TMP, TMP_MAX, TMP_MIN),
+        GSR: num2Color(req.query.GSR, GSR_MAX, GSR_MIN),
+        BO: num2Color(req.query.BO, BO_MAX, BO_MIN),
+        HR_LOC : randomLocation(),
+        TMP_LOC : randomLocation(),
+        GSR_LOC : randomLocation(),
+        BO_LOC : randomLocation(),
+      })
+    });
+
+    // Load the PNG image into Jimp
+    const imageBuffer = Buffer.from(image, 'base64');
+    const jimpImage = await Jimp.read(imageBuffer);
+
+    // Get the BMP buffer
+    const bmpBuffer = await jimpImage.getBufferAsync(Jimp.MIME_BMP);
+
+    // Send the BMP image over the internet
+    res.writeHead(200, { 'Content-Type': 'image/bmp' });
+    res.end(bmpBuffer, 'binary');
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('An error occurred while generating the image.');
+  }
 })
 
 router.get('/genImgTest', async function(req, res) {
