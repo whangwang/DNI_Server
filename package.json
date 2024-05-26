@@ -12,6 +12,7 @@
     "express": "~4.16.1",
     "firebase": "^10.11.1",
     "firebase-admin": "^12.1.0",
+    "fs": "^0.0.1-security",
     "http-errors": "~1.6.3",
     "jimp": "^0.22.12",
     "morgan": "~1.9.1",

@@ -4,6 +4,7 @@ var firebase = require("firebase-admin");
 var nodeHtmlToImage = require('node-html-to-image'); 
 var ejs = require("ejs");
 var Jimp = require('jimp');
+const fs = require('fs');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -99,6 +100,54 @@ router.get('/genImgTest', async function(req, res) {
   })
 })
 
+router.get('/genMultipleImg', async function(req, res){
+  const HR_MIN = 50
+  const TMP_MIN = 35
+  const GSR_MIN = 50
+  const BO_MIN = 80
+  const HR_MAX = 120
+  const TMP_MAX = 40
+  const GSR_MAX = 800
+  const BO_MAX = 100
+  for(let i = 0; i <= 15; i++){
+    for(let j = 0; j <= 15; j++){
+      for(let k = 0; k <= 15; k++){
+        for(let l = 0; l <= 15; l++){
+          let hr = (HR_MAX - HR_MIN) * (i) / 15 + HR_MIN
+          let tmp = (TMP_MAX - TMP_MIN) * (j) / 15 + TMP_MIN
+          let gsr = (GSR_MAX - GSR_MIN) * (k) / 15 + GSR_MIN
+          let bo = (BO_MAX - BO_MIN) * (l) / 15 + BO_MIN
+
+          const image = await nodeHtmlToImage({
+            html: await ejs.renderFile('views/index.ejs', {
+              HR: num2Color(hr, HR_MAX, HR_MIN - 20),
+              TMP: num2Color(tmp, TMP_MAX, TMP_MIN - 20),
+              GSR: num2Color(gsr, GSR_MAX, GSR_MIN - 20),
+              BO: num2Color(bo, BO_MAX, BO_MIN - 20),
+              HR_LOC : randomLocation(),
+              TMP_LOC : randomLocation(),
+              GSR_LOC : randomLocation(),
+              BO_LOC : randomLocation(),
+            })
+          });
+      
+          // Load the PNG image into Jimp
+          const imageBuffer = Buffer.from(image, 'base64');
+          const jimpImage = await Jimp.read(imageBuffer);
+      
+          // Get the BMP buffer
+          const bmpBuffer = await jimpImage.getBufferAsync(Jimp.MIME_BMP);
+
+          const outputPath = __dirname + `/../output/image_hr${i}tmp${j}gsr${k}bo${l}.bmp`;
+          await fs.promises.writeFile(outputPath, bmpBuffer);
+
+          console.log('BMP image saved to', outputPath);
+        }
+      }
+    }
+  }
+})
+
 function num2Color(num, max, min){
   num = Math.max(Math.min(num, max), min)
   var per = (num - min) / (max - min)
@@ -107,10 +156,10 @@ function num2Color(num, max, min){
 }
 
 function randomLocation(){
-  const min = -20
-  const max = 20
+  const min = -60
+  const max = 60
   return [`${Math.floor(Math.random() * (max - min)) + min}%`, `${Math.floor(Math.random() * (max - min)) + min}%`];
-}
+} 
 
 
 module.exports = router;
